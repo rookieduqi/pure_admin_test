@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, type CSSProperties } from "vue";
+import { ref, computed, reactive, type CSSProperties } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, Edit, Search, Plus } from "@element-plus/icons-vue";
+import { addServerNode } from "@/api/server";
 
 defineOptions({
   name: "ServerPage"
@@ -100,27 +101,85 @@ const handleSearch = () => {
   }
 };
 
+// 表单对话框可见性
+const dialogVisible = ref(false);
+
+// 表单数据
+const formData = reactive<ServerNode>({
+  name: "",
+  host: "",
+  port: "",
+  account: "",
+  password: "",
+  status: true,
+  remark: "",
+  addTime: ""
+});
+
+// 表单规则
+// 表单规则
+const formRules = {
+  name: [
+    { required: true, message: "请输入节点名称", trigger: "blur" },
+    { max: 50, message: "节点名称长度不能超过50个字符", trigger: "blur" }
+  ],
+  host: [{ required: true, message: "请输入主机地址", trigger: "blur" }],
+  port: [{ pattern: /^\d*$/, message: "端口必须为数字", trigger: "blur" }],
+  account: [{ required: true, message: "请输入账户", trigger: "blur" }],
+  password: [{ required: true, message: "请输入密码", trigger: "blur" }]
+};
+
+// 表单引用
+const formRef = ref();
+
+// 提交加载状态
+const submitLoading = ref(false);
+
+// 打开新增对话框
 const handleAdd = () => {
-  ElMessageBox.prompt("请输入节点名称", "新增节点", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
-    inputPattern: /^.{1,50}$/,
-    inputErrorMessage: "节点名称不能为空且长度不能超过50个字符"
-  })
-    .then(({ value }) => {
-      tableData.value.unshift({
-        name: value,
-        host: "",
-        port: "",
-        account: "",
-        password: "",
-        status: true,
-        remark: "",
-        addTime: new Date().toLocaleString()
-      });
-      ElMessage.success("添加成功");
-    })
-    .catch(() => {});
+  // 重置表单数据
+  Object.assign(formData, {
+    name: "",
+    host: "",
+    port: "",
+    account: "",
+    password: "",
+    status: true,
+    remark: "",
+    addTime: ""
+  });
+  dialogVisible.value = true;
+};
+
+// 提交表单
+const submitForm = () => {
+  formRef.value.validate(async (valid: boolean) => {
+    if (valid) {
+      submitLoading.value = true;
+      try {
+        // 准备提交的数据
+        const submitData = { ...formData };
+        // 发送请求到后端
+        const res = await addServerNode(submitData);
+        if (res.success) {
+          // 添加到表格数据中
+          tableData.value.unshift({
+            ...formData,
+            addTime: new Date().toLocaleString()
+          });
+          ElMessage.success("添加成功");
+          dialogVisible.value = false;
+        } else {
+          ElMessage.error(res.data || "添加失败");
+        }
+      } catch (error) {
+        console.error("添加节点失败:", error);
+        ElMessage.error("添加失败，请检查网络连接");
+      } finally {
+        submitLoading.value = false;
+      }
+    }
+  });
 };
 
 const handleEdit = (row: ServerNode) => {
@@ -157,6 +216,64 @@ const handleStatusChange = (row: ServerNode) => {
         <div class="card-header">
           <span>节点管理</span>
         </div>
+        <!-- 新增节点对话框 -->
+        <el-dialog
+          v-model="dialogVisible"
+          title="新增服务器节点"
+          width="500px"
+          destroy-on-close
+        >
+          <el-form
+            ref="formRef"
+            :model="formData"
+            :rules="formRules"
+            label-width="80px"
+            label-position="right"
+          >
+            <el-form-item label="节点名称" prop="name">
+              <el-input v-model="formData.name" placeholder="请输入节点名称" />
+            </el-form-item>
+            <el-form-item label="主机地址" prop="host">
+              <el-input v-model="formData.host" placeholder="请输入主机地址" />
+            </el-form-item>
+            <el-form-item label="端口" prop="port">
+              <el-input v-model="formData.port" placeholder="请输入端口号" />
+            </el-form-item>
+            <el-form-item label="账户" prop="account">
+              <el-input v-model="formData.account" placeholder="请输入账户" />
+            </el-form-item>
+            <el-form-item label="密码" prop="password">
+              <el-input
+                v-model="formData.password"
+                type="password"
+                placeholder="请输入密码"
+                show-password
+              />
+            </el-form-item>
+            <el-form-item label="状态" prop="status">
+              <el-switch v-model="formData.status" />
+            </el-form-item>
+            <el-form-item label="备注" prop="remark">
+              <el-input
+                v-model="formData.remark"
+                type="textarea"
+                placeholder="请输入备注信息"
+                :rows="2"
+              />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="dialogVisible = false">取消</el-button>
+              <el-button
+                type="primary"
+                :loading="submitLoading"
+                @click="submitForm"
+                >确定</el-button
+              >
+            </span>
+          </template>
+        </el-dialog>
       </template>
 
       <!-- 搜索框 -->
