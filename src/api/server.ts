@@ -15,7 +15,7 @@ export const addServerNode = (data?: object) => {
 
 /** 获取服务器节点列表 */
 export const getServerNodes = (params?: object) => {
-  return http.request<ServerNodeResult>("get", baseUrlApi("server/nodes"), {
+  return http.request<ServerNodeResult>("get", baseUrlApi("server/node"), {
     params
   });
 };

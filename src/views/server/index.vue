@@ -1,11 +1,42 @@
 <script setup lang="ts">
-import { ref, computed, reactive, type CSSProperties } from "vue";
+import { ref, computed, reactive, type CSSProperties, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, Edit, Search, Plus } from "@element-plus/icons-vue";
-import { addServerNode } from "@/api/server";
+import {
+  addServerNode,
+  getServerNodes,
+  updateServerNode,
+  deleteServerNode
+} from "@/api/server";
 
 defineOptions({
   name: "ServerPage"
+});
+
+// 加载状态
+const loading = ref(false);
+
+// 获取服务器节点列表
+const fetchServerNodes = async () => {
+  loading.value = true;
+  try {
+    const res = await getServerNodes();
+    if (res.success) {
+      tableData.value = res.data || [];
+    } else {
+      ElMessage.error(res.data || "获取节点列表失败");
+    }
+  } catch (error) {
+    console.error("获取节点列表失败:", error);
+    ElMessage.error("获取节点列表失败，请检查网络连接");
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 组件挂载时获取数据
+onMounted(() => {
+  fetchServerNodes();
 });
 
 const elStyle = computed((): CSSProperties => {
@@ -14,12 +45,6 @@ const elStyle = computed((): CSSProperties => {
     justifyContent: "start"
   };
 });
-
-export interface SearchParams {
-  name: string;
-  page: number;
-  pageSize: number;
-}
 
 interface ServerNode {
   name: string;
@@ -34,58 +59,7 @@ interface ServerNode {
 
 const searchForm = ref({ name: "" });
 
-const tableData = ref<ServerNode[]>([
-  {
-    name: "Mac主机",
-    host: "127.0.0.1",
-    port: "22",
-    account: "1111",
-    password: "222",
-    status: true,
-    remark: "Mac构建",
-    addTime: "2020/09/08 10:45"
-  },
-  {
-    name: "Win主机",
-    host: "127.0.0.2",
-    port: "22",
-    account: "1111",
-    password: "222",
-    status: true,
-    remark: "Win构建",
-    addTime: "2020/09/08 10:45"
-  },
-  {
-    name: "Ubuntu主机",
-    host: "无",
-    port: "",
-    account: "1111",
-    password: "222",
-    status: true,
-    remark: "Ubuntu构建",
-    addTime: "2020/09/08 10:45"
-  },
-  {
-    name: "Centos主机",
-    host: "无",
-    port: "",
-    account: "1111",
-    password: "222",
-    status: true,
-    remark: "Centos构建",
-    addTime: "2020/09/08 10:45"
-  },
-  {
-    name: "其他主机",
-    host: "无",
-    port: "",
-    account: "1111",
-    password: "222",
-    status: true,
-    remark: "其他",
-    addTime: "2020/09/08 10:45"
-  }
-]);
+const tableData = ref<ServerNode[]>([]); // 初始化为空数组
 
 // 计算属性 - 过滤数据
 const filteredData = computed(() => {
@@ -117,7 +91,6 @@ const formData = reactive<ServerNode>({
 });
 
 // 表单规则
-// 表单规则
 const formRules = {
   name: [
     { required: true, message: "请输入节点名称", trigger: "blur" },
@@ -148,6 +121,8 @@ const handleAdd = () => {
     remark: "",
     addTime: ""
   });
+  // 重置编辑模式
+  isEdit.value = false;
   dialogVisible.value = true;
 };
 
@@ -160,21 +135,37 @@ const submitForm = () => {
         // 准备提交的数据
         const submitData = { ...formData };
         // 发送请求到后端
-        const res = await addServerNode(submitData);
+        const res = isEdit.value
+          ? await updateServerNode(submitData)
+          : await addServerNode(submitData);
+
         if (res.success) {
-          // 添加到表格数据中
-          tableData.value.unshift({
-            ...formData,
-            addTime: new Date().toLocaleString()
-          });
-          ElMessage.success("添加成功");
+          if (isEdit.value) {
+            // 更新表格数据
+            const index = tableData.value.findIndex(
+              item => item.name === formData.name
+            );
+            if (index !== -1) {
+              tableData.value[index] = { ...formData };
+            }
+            ElMessage.success("更新成功");
+          } else {
+            // 添加到表格数据中
+            tableData.value.unshift({
+              ...formData,
+              addTime: new Date().toLocaleString()
+            });
+            ElMessage.success("添加成功");
+          }
           dialogVisible.value = false;
         } else {
-          ElMessage.error(res.data || "添加失败");
+          ElMessage.error(res.data || (isEdit.value ? "更新失败" : "添加失败"));
         }
       } catch (error) {
-        console.error("添加节点失败:", error);
-        ElMessage.error("添加失败，请检查网络连接");
+        console.error(isEdit.value ? "更新节点失败:" : "添加节点失败:", error);
+        ElMessage.error(
+          (isEdit.value ? "更新" : "添加") + "失败，请检查网络连接"
+        );
       } finally {
         submitLoading.value = false;
       }
@@ -183,21 +174,36 @@ const submitForm = () => {
 };
 
 const handleEdit = (row: ServerNode) => {
-  ElMessageBox.confirm("确定要编辑该节点吗？", "提示", {
-    confirmButtonText: "确定",
-    cancelButtonText: "取消",
-    type: "warning"
-  }).then(() => ElMessage.success("进入编辑模式"));
+  // 复制数据到表单
+  Object.assign(formData, { ...row });
+  dialogVisible.value = true;
+  // 标记为编辑模式
+  isEdit.value = true;
 };
+
+// 编辑模式标记
+const isEdit = ref(false);
 
 const handleDelete = (row: ServerNode) => {
   ElMessageBox.confirm("确定要删除该节点吗？", "警告", {
     confirmButtonText: "确定",
     cancelButtonText: "取消",
     type: "warning"
-  }).then(() => {
-    tableData.value = tableData.value.filter(item => item.name !== row.name);
-    ElMessage.success("删除成功");
+  }).then(async () => {
+    try {
+      const res = await deleteServerNode(row.name);
+      if (res.success) {
+        tableData.value = tableData.value.filter(
+          item => item.name !== row.name
+        );
+        ElMessage.success("删除成功");
+      } else {
+        ElMessage.error(res.data || "删除失败");
+      }
+    } catch (error) {
+      console.error("删除节点失败:", error);
+      ElMessage.error("删除失败，请检查网络连接");
+    }
   });
 };
 
@@ -219,7 +225,7 @@ const handleStatusChange = (row: ServerNode) => {
         <!-- 新增节点对话框 -->
         <el-dialog
           v-model="dialogVisible"
-          title="新增服务器节点"
+          :title="isEdit ? '编辑服务器节点' : '新增服务器节点'"
           width="500px"
           destroy-on-close
         >
