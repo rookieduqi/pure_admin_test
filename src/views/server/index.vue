@@ -47,6 +47,7 @@ const elStyle = computed((): CSSProperties => {
 });
 
 interface ServerNode {
+  id: string;
   name: string;
   host: string;
   port: string;
@@ -54,7 +55,7 @@ interface ServerNode {
   password: string;
   status: boolean;
   remark: string;
-  addTime: string;
+  CreateTime: string;
 }
 
 const searchForm = ref({ name: "" });
@@ -191,7 +192,7 @@ const handleDelete = (row: ServerNode) => {
     type: "warning"
   }).then(async () => {
     try {
-      const res = await deleteServerNode(row.name);
+      const res = await deleteServerNode(row.id);
       if (res.success) {
         tableData.value = tableData.value.filter(
           item => item.name !== row.name
