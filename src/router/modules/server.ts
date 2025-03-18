@@ -16,14 +16,16 @@ export default {
         // 通过设置showParent为true，显示父级
         showParent: true
       }
+    },
+    {
+      path: "/server/view/:id",
+      name: "ServerView",
+      component: () => import("@/views/server/view.vue"),
+      meta: {
+        title: "节点视图",
+        // 隐藏该路由在菜单中的显示
+        showLink: false
+      }
     }
-    // {
-    //   path: "/server/node",
-    //   name: "Server",
-    //   component: () => import("@/views/server/node.vue"),
-    //   meta: {
-    //     title: "视图管理"
-    //   }
-    // }
   ]
 };

@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, reactive, type CSSProperties, onMounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete, Edit, Search, Plus } from "@element-plus/icons-vue";
+import {
+  Delete,
+  Edit,
+  Search,
+  Plus,
+  View,
+  RefreshRight
+} from "@element-plus/icons-vue";
+import { useRouter } from "vue-router";
 import {
   addServerNode,
   getServerNodes,
@@ -12,6 +20,9 @@ import {
 defineOptions({
   name: "ServerPage"
 });
+
+// 路由
+const router = useRouter();
 
 // 加载状态
 const loading = ref(false);
@@ -62,18 +73,43 @@ const searchForm = ref({ name: "" });
 
 const tableData = ref<ServerNode[]>([]); // 初始化为空数组
 
-// 计算属性 - 过滤数据
-const filteredData = computed(() => {
-  const keyword = searchForm.value.name.trim().toLowerCase();
-  return keyword
-    ? tableData.value.filter(item => item.name.toLowerCase().includes(keyword))
-    : tableData.value;
-});
+// 计算属性 - 过滤数据（仅在未进行后端搜索时使用）
+const filteredData = computed(() => tableData.value);
 
-const handleSearch = () => {
+const handleSearch = async () => {
   if (!searchForm.value.name.trim()) {
     ElMessage.warning("请输入搜索关键词");
+    return;
   }
+
+  loading.value = true;
+  try {
+    const res = await getServerNodes({ name: searchForm.value.name.trim() });
+    if (res.success) {
+      tableData.value = res.data || [];
+    } else {
+      ElMessage.error(res.data || "搜索节点失败");
+    }
+  } catch (error) {
+    console.error("搜索节点失败:", error);
+    ElMessage.error("搜索失败，请检查网络连接");
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 重置搜索
+const handleReset = () => {
+  searchForm.value.name = "";
+  fetchServerNodes();
+};
+
+// 查看节点视图
+const handleView = (row: ServerNode) => {
+  router.push({
+    path: `/server/view/${row.id}`,
+    query: { name: row.name }
+  });
 };
 
 // 表单对话框可见性
@@ -299,6 +335,13 @@ const handleStatusChange = (row: ServerNode) => {
               >查询
             </el-button>
             <el-button
+              type="info"
+              :icon="RefreshRight"
+              class="ml-2"
+              @click="handleReset"
+              >重置
+            </el-button>
+            <el-button
               type="success"
               :icon="Plus"
               class="ml-2"
@@ -338,7 +381,7 @@ const handleStatusChange = (row: ServerNode) => {
             show-overflow-tooltip
           />
           <el-table-column prop="addTime" label="添加时间" min-width="160" />
-          <el-table-column label="操作" width="150" fixed="right">
+          <el-table-column label="操作" width="220" fixed="right">
             <template #default="{ row }">
               <el-button
                 type="primary"
@@ -346,6 +389,9 @@ const handleStatusChange = (row: ServerNode) => {
                 link
                 @click="handleEdit(row)"
                 >编辑
+              </el-button>
+              <el-button type="info" :icon="View" link @click="handleView(row)"
+                >视图
               </el-button>
               <el-button
                 type="danger"
