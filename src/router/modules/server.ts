@@ -26,6 +26,16 @@ export default {
         // 隐藏该路由在菜单中的显示
         showLink: false
       }
+    },
+    {
+      path: "/server/console/:nodeId/:viewId",
+      name: "ServerConsole",
+      component: () => import("@/views/server/console.vue"),
+      meta: {
+        title: "控制台输出",
+        // 隐藏该路由在菜单中的显示
+        showLink: false
+      }
     }
   ]
 };
