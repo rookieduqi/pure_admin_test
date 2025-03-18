@@ -73,8 +73,26 @@ const searchForm = ref({ name: "" });
 
 const tableData = ref<ServerNode[]>([]); // 初始化为空数组
 
-// 计算属性 - 过滤数据（仅在未进行后端搜索时使用）
-const filteredData = computed(() => tableData.value);
+// 分页相关
+const currentPage = ref(1);
+const pageSize = ref(10);
+
+// 计算属性 - 过滤并分页数据
+const filteredData = computed(() => {
+  const startIndex = (currentPage.value - 1) * pageSize.value;
+  const endIndex = startIndex + pageSize.value;
+  return tableData.value.slice(startIndex, endIndex);
+});
+
+// 处理分页变化
+const handleSizeChange = (val: number) => {
+  pageSize.value = val;
+  currentPage.value = 1; // 重置到第一页
+};
+
+const handleCurrentChange = (val: number) => {
+  currentPage.value = val;
+};
 
 const handleSearch = async () => {
   if (!searchForm.value.name.trim()) {
@@ -178,14 +196,9 @@ const submitForm = () => {
 
         if (res.success) {
           if (isEdit.value) {
-            // 更新表格数据
-            const index = tableData.value.findIndex(
-              item => item.name === formData.name
-            );
-            if (index !== -1) {
-              tableData.value[index] = { ...formData };
-            }
             ElMessage.success("更新成功");
+            // 重新获取最新数据
+            fetchServerNodes();
           } else {
             // 添加到表格数据中
             tableData.value.unshift({
@@ -409,8 +422,13 @@ const handleStatusChange = (row: ServerNode) => {
         <el-pagination
           background
           layout="total, sizes, prev, pager, next"
-          :total="filteredData.length"
+          :total="tableData.length"
+          :current-page="currentPage"
+          :page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
           class="mt-4"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
         />
       </div>
     </el-card>
