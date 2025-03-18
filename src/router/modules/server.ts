@@ -3,7 +3,7 @@ export default {
   redirect: "/server/index",
   meta: {
     icon: "ri:server-line",
-    title: "服务器管理",
+    title: "部署管理",
     rank: 8
   },
   children: [
@@ -17,5 +17,13 @@ export default {
         showParent: true
       }
     }
+    // {
+    //   path: "/server/node",
+    //   name: "Server",
+    //   component: () => import("@/views/server/node.vue"),
+    //   meta: {
+    //     title: "视图管理"
+    //   }
+    // }
   ]
 };
