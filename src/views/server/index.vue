@@ -126,7 +126,13 @@ const handleReset = () => {
 const handleView = (row: ServerNode) => {
   router.push({
     path: `/server/view/${row.id}`,
-    query: { name: row.name }
+    query: {
+      name: row.name,
+      host: row.host,
+      port: row.port,
+      account: row.account,
+      password: row.password
+    }
   });
 };
 

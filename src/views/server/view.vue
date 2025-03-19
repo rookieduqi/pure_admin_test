@@ -19,7 +19,8 @@ import {
   updateNodeView,
   deleteNodeView,
   playNodeView,
-  pauseNodeView
+  pauseNodeView,
+  getViewJobs
 } from "@/api/server";
 
 defineOptions({
@@ -30,9 +31,13 @@ defineOptions({
 const route = useRoute();
 const router = useRouter();
 
-// 获取节点ID
+// 获取节点信息
 const nodeId = ref(route.params.id as string);
 const nodeName = ref(route.query.name as string);
+const nodeHost = ref(route.query.host as string);
+const nodePort = ref(route.query.port as string);
+const nodeAccount = ref(route.query.account as string);
+const nodePassword = ref(route.query.password as string);
 
 // 当前活动的标签页
 const activeTab = ref("view");
@@ -50,6 +55,8 @@ interface NodeView {
   lastDuration?: string;
   createTime?: string;
   expanded?: boolean;
+  jobs?: any[];
+  loading?: boolean;
 }
 
 // 视图数据
@@ -85,7 +92,12 @@ const fetchNodeViews = async () => {
 
   loading.value = true;
   try {
-    const res = await getNodeViews(nodeId.value);
+    const res = await getNodeViews(nodeId.value, {
+      host: nodeHost.value,
+      port: nodePort.value,
+      account: nodeAccount.value,
+      password: nodePassword.value
+    });
     if (res.success) {
       viewData.value = res.data || [];
     } else {
@@ -150,6 +162,39 @@ const formData = reactive<NodeView>({
 const formRules = {
   weather: [{ required: true, message: "请选择天气", trigger: "change" }],
   name: [{ required: true, message: "请输入名称", trigger: "blur" }]
+};
+
+// 处理表格展开事件
+const handleExpand = async (row: NodeView, expanded: boolean) => {
+  if (!expanded || row.jobs) return;
+
+  row.loading = true;
+  try {
+    const res = await getViewJobs(nodeId.value, row.id, {
+      host: nodeHost.value,
+      port: nodePort.value,
+      account: nodeAccount.value,
+      password: nodePassword.value
+    });
+    if (res.success) {
+      row.jobs = res.data || [];
+    } else {
+      ElMessage.error(res.data || "获取Jobs列表失败");
+    }
+  } catch (error) {
+    console.error("获取Jobs列表失败:", error);
+    ElMessage.error("获取Jobs列表失败，请检查网络连接");
+  } finally {
+    row.loading = false;
+  }
+};
+
+// 处理Job点击事件
+const handleJobClick = (view: NodeView, job: { name: string }) => {
+  router.push({
+    path: `/server/job/${nodeId.value}/${view.id}/${job.name}`,
+    query: { viewName: view.name, jobName: job.name }
+  });
 };
 
 // 表单引用
@@ -370,7 +415,7 @@ onMounted(() => {
               border
               stripe
               style="width: 100%"
-              @row-click="row => (row.expanded = !row.expanded)"
+              @expand-change="handleExpand"
             >
               <el-table-column type="selection" width="55" align="center" />
 
@@ -400,46 +445,28 @@ onMounted(() => {
                 width="120"
                 align="center"
               />
-              <el-table-column label="操作" width="180" fixed="right">
+              <el-table-column type="expand">
                 <template #default="{ row }">
-                  <div class="action-buttons">
-                    <el-button
-                      type="primary"
-                      :icon="Edit"
-                      link
-                      @click.stop="handleEdit(row)"
-                      >编辑
-                    </el-button>
-                    <el-button
-                      type="danger"
-                      :icon="Delete"
-                      link
-                      @click.stop="handleDelete(row)"
-                      >删除
-                    </el-button>
-                    <el-dropdown
-                      trigger="click"
-                      @command="command => handleCommand(command, row)"
-                    >
-                      <el-button type="primary" link>
-                        更多<el-icon class="el-icon--right"
-                          ><arrow-down
-                        /></el-icon>
-                      </el-button>
-                      <template #dropdown>
-                        <el-dropdown-menu>
-                          <el-dropdown-item command="play">
-                            <el-icon><video-play /></el-icon> 播放
-                          </el-dropdown-item>
-                          <el-dropdown-item command="pause">
-                            <el-icon><video-pause /></el-icon> 暂停
-                          </el-dropdown-item>
-                          <el-dropdown-item command="more">
-                            <el-icon><more /></el-icon> 更多
-                          </el-dropdown-item>
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
+                  <div v-loading="row.loading">
+                    <div v-if="row.jobs && row.jobs.length > 0">
+                      <el-table :data="row.jobs" style="width: 100%">
+                        <el-table-column prop="name" label="Job名称" />
+                        <el-table-column prop="lastSuccess" label="上次成功" />
+                        <el-table-column prop="lastFailure" label="上次失败" />
+                        <el-table-column prop="lastDuration" label="持续时间" />
+                        <el-table-column label="操作" width="100">
+                          <template #default="{ row: job }">
+                            <el-button
+                              type="primary"
+                              link
+                              @click="handleJobClick(row, job)"
+                              >查看详情
+                            </el-button>
+                          </template>
+                        </el-table-column>
+                      </el-table>
+                    </div>
+                    <div v-else class="empty-text">暂无Job数据</div>
                   </div>
                 </template>
               </el-table-column>

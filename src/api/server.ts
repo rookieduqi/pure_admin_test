@@ -51,12 +51,12 @@ export const deleteServerNode = (id: string) => {
 };
 
 /** 获取节点视图列表 */
-export const getNodeViews = (nodeId: string, params?: object) => {
+export const getNodeViews = (nodeId: string, data?: object) => {
   return http.request<ServerViewResult>(
-    "get",
-    baseUrlApi(`server/node_view/${nodeId}/view`),
+    "post",
+    baseUrlApi(`server/node_view/get/view`),
     {
-      params
+      data
     }
   );
 };
@@ -92,6 +92,15 @@ export const deleteNodeView = (nodeId: string, viewId: string) => {
   return http.request<ServerViewResult>(
     "delete",
     baseUrlApi(`server/node_view/${nodeId}/view/${viewId}`)
+  );
+};
+
+/** 获取视图Jobs列表 */
+export const getViewJobs = (nodeId: string, viewId: string, data?: object) => {
+  return http.request<ServerViewResult>(
+    "post",
+    baseUrlApi(`server/view_jobs/get/job`),
+    { params: { nodeId, viewId, ...data } }
   );
 };
 
