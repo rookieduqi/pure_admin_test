@@ -285,11 +285,19 @@ const handleDelete = (row: NodeView) => {
 };
 
 // 播放操作
-const handlePlay = async (row: NodeView) => {
+const handlePlay = async (row: NodeView, jobName?: string) => {
   if (!nodeId.value) return;
   try {
     // 调用播放相关的API
-    const res = await playNodeView(nodeId.value, row.id);
+    const res = await playNodeView(
+      nodeId.value,
+      row.id,
+      jobName,
+      nodeHost.value,
+      nodePort.value,
+      nodeAccount.value,
+      nodePassword.value
+    );
     if (res.success) {
       ElMessage.success("播放成功");
       fetchNodeViews(); // 刷新数据
@@ -298,16 +306,15 @@ const handlePlay = async (row: NodeView) => {
     }
   } catch (error) {
     console.error("播放失败:", error);
-    ElMessage.error("播放失败，请检查网络连接");
   }
 };
 
 // 暂停操作
-const handlePause = async (row: NodeView) => {
+const handlePause = async (row: NodeView, jobName?: string) => {
   if (!nodeId.value) return;
   try {
     // 调用暂停相关的API
-    const res = await pauseNodeView(nodeId.value, row.id);
+    const res = await pauseNodeView(nodeId.value, row.id, jobName);
     if (res.success) {
       ElMessage.success("暂停成功");
       fetchNodeViews(); // 刷新数据
@@ -330,13 +337,17 @@ const handleMore = (row: NodeView) => {
 };
 
 // 处理下拉菜单命令
-const handleCommand = (command: string, row: NodeView) => {
+const handleCommand = (
+  command: string,
+  row: NodeView,
+  job?: { name: string }
+) => {
   switch (command) {
     case "play":
-      handlePlay(row);
+      handlePlay(row, job?.name);
       break;
     case "pause":
-      handlePause(row);
+      handlePause(row, job?.name);
       break;
     case "more":
       handleMore(row);
@@ -454,14 +465,36 @@ onMounted(() => {
                         <el-table-column prop="lastSuccess" label="上次成功" />
                         <el-table-column prop="lastFailure" label="上次失败" />
                         <el-table-column prop="lastDuration" label="持续时间" />
-                        <el-table-column label="操作" width="100">
+                        <el-table-column label="操作" width="120">
                           <template #default="{ row: job }">
-                            <el-button
-                              type="primary"
-                              link
-                              @click="handleJobClick(row, job)"
-                              >查看详情
-                            </el-button>
+                            <el-dropdown
+                              @command="
+                                command => handleCommand(command, row, job)
+                              "
+                            >
+                              <el-button type="primary" link>
+                                操作<el-icon class="el-icon--right"
+                                  ><arrow-down
+                                /></el-icon>
+                              </el-button>
+                              <template #dropdown>
+                                <el-dropdown-menu>
+                                  <el-dropdown-item
+                                    :icon="VideoPlay"
+                                    command="play"
+                                    >播放</el-dropdown-item
+                                  >
+                                  <el-dropdown-item
+                                    :icon="VideoPause"
+                                    command="pause"
+                                    >暂停</el-dropdown-item
+                                  >
+                                  <el-dropdown-item :icon="More" command="more"
+                                    >详情</el-dropdown-item
+                                  >
+                                </el-dropdown-menu>
+                              </template>
+                            </el-dropdown>
                           </template>
                         </el-table-column>
                       </el-table>

@@ -105,18 +105,36 @@ export const getViewJobs = (nodeId: string, viewId: string, data?: object) => {
 };
 
 /** 播放节点视图 */
-export const playNodeView = (nodeId: string, viewId: string) => {
+export const playNodeView = (
+  nodeId: string,
+  viewId: string,
+  jobName?: string,
+  host?: string,
+  port?: string,
+  account?: string,
+  password?: string
+) => {
   return http.request<ServerViewResult>(
     "post",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/play`)
+    baseUrlApi(`server/view_jobs/start/job`),
+    { data: { jobName, viewId, host, port, account, password } }
   );
 };
 
 /** 暂停节点视图 */
-export const pauseNodeView = (nodeId: string, viewId: string) => {
+export const pauseNodeView = (
+  nodeId: string,
+  viewId: string,
+  jobName?: string,
+  host?: string,
+  port?: string,
+  account?: string,
+  password?: string
+) => {
   return http.request<ServerViewResult>(
     "post",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/pause`)
+    baseUrlApi(`server/view_jobs/stop/job`),
+    { data: { jobName, viewId, host, port, account, password } }
   );
 };
 
