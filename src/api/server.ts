@@ -180,18 +180,60 @@ export const deleteBuild = (
 };
 
 /** 获取Pipeline概览 */
-export const getPipelineOverview = (nodeId: string, viewId: string) => {
+export const getPipelineOverview = (
+  nodeId: string,
+  viewId: string,
+  viewName?: string,
+  host?: string,
+  port?: string,
+  account?: string,
+  password?: string,
+  jobName?: string
+) => {
   return http.request<PipelineResult>(
-    "get",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/pipeline/overview`)
+    "post",
+    baseUrlApi(`server/view_console/pipeline/overview`),
+    {
+      data: {
+        nodeId,
+        viewId,
+        viewName,
+        host,
+        port,
+        account,
+        password,
+        jobName
+      }
+    }
   );
 };
 
 /** 获取Pipeline控制台 */
-export const getPipelineConsole = (nodeId: string, viewId: string) => {
+export const getPipelineConsole = (
+  nodeId: string,
+  viewId: string,
+  viewName?: string,
+  host?: string,
+  port?: string,
+  account?: string,
+  password?: string,
+  jobName?: string
+) => {
   return http.request<PipelineResult>(
-    "get",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/pipeline/console`)
+    "post",
+    baseUrlApi(`server/view_console/pipeline/console`),
+    {
+      data: {
+        nodeId,
+        viewId,
+        viewName,
+        host,
+        port,
+        account,
+        password,
+        jobName
+      }
+    }
   );
 };
 

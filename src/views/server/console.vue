@@ -122,7 +122,16 @@ const pipelineOverviewData = ref("");
 const fetchPipelineOverview = async () => {
   loading.value = true;
   try {
-    const res = await getPipelineOverview(nodeId.value, viewId.value);
+    const res = await getPipelineOverview(
+      nodeId.value,
+      viewId.value,
+      viewName.value,
+      nodeHost.value,
+      nodePort.value,
+      nodeAccount.value,
+      nodePassword.value,
+      jobName.value
+    );
     if (res.success) {
       pipelineOverviewData.value = res.data || "Pipeline概览数据加载中...";
       activeContent.value = "pipeline-overview";
@@ -142,7 +151,11 @@ const pipelineConsoleData = ref("");
 const fetchPipelineConsole = async () => {
   loading.value = true;
   try {
-    const res = await getPipelineConsole(nodeId.value, viewId.value);
+    const res = await getPipelineConsole(
+      nodeId.value,
+      viewId.value,
+      viewName.value
+    );
     if (res.success) {
       pipelineConsoleData.value = res.data || "Pipeline控制台数据加载中...";
       activeContent.value = "pipeline-console";
