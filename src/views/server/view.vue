@@ -57,6 +57,8 @@ interface NodeView {
   expanded?: boolean;
   jobs?: any[];
   loading?: boolean;
+  type?: "folder" | "job"; // 添加type字段，用于区分文件夹和job
+  node_id?: string;
 }
 
 // 视图数据
@@ -314,7 +316,15 @@ const handlePause = async (row: NodeView, jobName?: string) => {
   if (!nodeId.value) return;
   try {
     // 调用暂停相关的API
-    const res = await pauseNodeView(nodeId.value, row.id, jobName);
+    const res = await pauseNodeView(
+      nodeId.value,
+      row.id,
+      jobName,
+      nodeHost.value,
+      nodePort.value,
+      nodeAccount.value,
+      nodePassword.value
+    );
     if (res.success) {
       ElMessage.success("暂停成功");
       fetchNodeViews(); // 刷新数据
@@ -328,11 +338,20 @@ const handlePause = async (row: NodeView, jobName?: string) => {
 };
 
 // 更多操作 - 跳转到控制台输出页面
-const handleMore = (row: NodeView) => {
+const handleMore = (row: NodeView, job?: any) => {
   // 跳转到控制台输出页面
   router.push({
     path: `/server/console/${nodeId.value}/${row.id}`,
-    query: { name: row.name }
+    query: {
+      name: job?.name || row.name,
+      host: nodeHost.value,
+      port: nodePort.value,
+      account: nodeAccount.value,
+      password: nodePassword.value,
+      viewId: row.id,
+      viewName: row.name,
+      jobName: job?.name
+    }
   });
 };
 
@@ -350,7 +369,7 @@ const handleCommand = (
       handlePause(row, job?.name);
       break;
     case "more":
-      handleMore(row);
+      handleMore(row, job);
       break;
     default:
       break;
@@ -456,6 +475,37 @@ onMounted(() => {
                 width="120"
                 align="center"
               />
+              <!-- 操作列 -->
+              <el-table-column label="操作" width="120" align="center">
+                <template #default="{ row }">
+                  <div v-if="row.type === 'job'">
+                    <el-dropdown
+                      @command="command => handleCommand(command, row)"
+                    >
+                      <el-button type="primary" link>
+                        操作
+                        <el-icon class="el-icon--right">
+                          <arrow-down />
+                        </el-icon>
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item :icon="VideoPlay" command="play"
+                            >播放
+                          </el-dropdown-item>
+                          <el-dropdown-item :icon="VideoPause" command="pause"
+                            >暂停
+                          </el-dropdown-item>
+                          <el-dropdown-item :icon="More" command="more"
+                            >详情
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                  <span v-else>-</span>
+                </template>
+              </el-table-column>
               <el-table-column type="expand">
                 <template #default="{ row }">
                   <div v-loading="row.loading">
@@ -473,25 +523,26 @@ onMounted(() => {
                               "
                             >
                               <el-button type="primary" link>
-                                操作<el-icon class="el-icon--right"
-                                  ><arrow-down
-                                /></el-icon>
+                                操作
+                                <el-icon class="el-icon--right">
+                                  <arrow-down />
+                                </el-icon>
                               </el-button>
                               <template #dropdown>
                                 <el-dropdown-menu>
                                   <el-dropdown-item
                                     :icon="VideoPlay"
                                     command="play"
-                                    >播放</el-dropdown-item
-                                  >
+                                    >播放
+                                  </el-dropdown-item>
                                   <el-dropdown-item
                                     :icon="VideoPause"
                                     command="pause"
-                                    >暂停</el-dropdown-item
-                                  >
+                                    >暂停
+                                  </el-dropdown-item>
                                   <el-dropdown-item :icon="More" command="more"
-                                    >详情</el-dropdown-item
-                                  >
+                                    >详情
+                                  </el-dropdown-item>
                                 </el-dropdown-menu>
                               </template>
                             </el-dropdown>

@@ -139,10 +139,31 @@ export const pauseNodeView = (
 };
 
 /** 获取控制台输出 */
-export const getConsoleOutput = (nodeId: string, viewId: string) => {
+export const getConsoleOutput = (
+  nodeId: string,
+  viewId: string,
+  viewName?: string,
+  host?: string,
+  port?: string,
+  account?: string,
+  password?: string,
+  jobName?: string
+) => {
   return http.request<ConsoleOutputResult>(
-    "get",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/console`)
+    "post",
+    baseUrlApi(`server/view_console/get`),
+    {
+      data: {
+        nodeId,
+        viewId,
+        viewName,
+        host,
+        port,
+        account,
+        password,
+        jobName
+      }
+    }
   );
 };
 

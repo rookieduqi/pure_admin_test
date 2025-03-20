@@ -30,6 +30,13 @@ const router = useRouter();
 const nodeId = ref(route.params.nodeId as string);
 const viewId = ref(route.params.viewId as string);
 const viewName = ref(route.query.name as string);
+const jobName = ref(route.query.jobName as string);
+
+// 获取节点连接信息
+const nodeHost = ref(route.query.host as string);
+const nodePort = ref(route.query.port as string);
+const nodeAccount = ref(route.query.account as string);
+const nodePassword = ref(route.query.password as string);
 
 // 加载状态
 const loading = ref(false);
@@ -52,15 +59,21 @@ const fetchConsoleOutput = async () => {
   loading.value = true;
   try {
     // 调用获取控制台输出的API
-    const res = await getConsoleOutput(nodeId.value, viewId.value);
+    const res = await getConsoleOutput(
+      nodeId.value,
+      viewId.value,
+      viewName.value,
+      nodeHost.value,
+      nodePort.value,
+      nodeAccount.value,
+      nodePassword.value,
+      jobName.value
+    );
     if (res.success) {
-      // 假设API返回的是字符串数组
-      consoleOutput.value = res.data || [
-        `[${new Date().toLocaleString()}] 正在初始化任务...`,
-        `[${new Date().toLocaleString()}] 开始执行任务`,
-        `[${new Date().toLocaleString()}] 任务执行中...`,
-        `[${new Date().toLocaleString()}] 任务执行完成`
-      ];
+      // 将返回的字符串按换行符分割成数组
+      consoleOutput.value = (res.data || "")
+        .split("\n")
+        .filter(line => line.trim() !== "");
     } else {
       ElMessage.error(res.data || "获取控制台输出失败");
     }
@@ -190,7 +203,13 @@ const showConsoleOutput = () => {
 const goBack = () => {
   router.push({
     path: `/server/view/${nodeId.value}`,
-    query: { name: route.query.nodeName as string }
+    query: {
+      name: route.query.nodeName as string,
+      host: route.query.host as string,
+      port: route.query.port as string,
+      account: route.query.account as string,
+      password: route.query.password as string
+    }
   });
 };
 
@@ -241,7 +260,10 @@ onBeforeUnmount(() => {
   <div>
     <p class="mb-2">
       <el-button type="primary" size="small" @click="goBack">
-        <el-icon><arrow-left /></el-icon> 返回视图列表
+        <el-icon>
+          <arrow-left />
+        </el-icon>
+        返回视图列表
       </el-button>
       <span class="ml-2">视图 {{ viewName }} 的控制台输出</span>
     </p>
