@@ -312,14 +312,14 @@ const handlePlay = async (row: NodeView, jobName?: string) => {
 };
 
 // 暂停操作
-const handlePause = async (row: NodeView, job?: any) => {
+const handlePause = async (row: NodeView, jobName?: string) => {
   if (!nodeId.value) return;
   try {
     // 调用暂停相关的API
     const res = await pauseNodeView(
       nodeId.value,
       row.id,
-      job.name,
+      jobName,
       nodeHost.value,
       nodePort.value,
       nodeAccount.value,
