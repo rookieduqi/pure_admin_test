@@ -108,7 +108,7 @@ export const getViewJobs = (nodeId: string, viewId: string, data?: object) => {
 export const playNodeView = (
   nodeId: string,
   viewId: string,
-  jobName?: string,
+  viewName?: string,
   host?: string,
   port?: string,
   account?: string,
@@ -117,7 +117,17 @@ export const playNodeView = (
   return http.request<ServerViewResult>(
     "post",
     baseUrlApi(`server/view_jobs/start/job`),
-    { data: { jobName, viewId, host, port, account, password } }
+    {
+      data: {
+        nodeId,
+        viewId,
+        viewName,
+        host,
+        port,
+        account,
+        password
+      }
+    }
   );
 };
 
@@ -125,7 +135,7 @@ export const playNodeView = (
 export const pauseNodeView = (
   nodeId: string,
   viewId: string,
-  jobName?: string,
+  viewName?: string,
   host?: string,
   port?: string,
   account?: string,
@@ -134,7 +144,17 @@ export const pauseNodeView = (
   return http.request<ServerViewResult>(
     "post",
     baseUrlApi(`server/view_jobs/stop/job`),
-    { data: { jobName, viewId, host, port, account, password } }
+    {
+      data: {
+        nodeId,
+        viewId,
+        viewName,
+        host,
+        port,
+        account,
+        password
+      }
+    }
   );
 };
 
@@ -171,21 +191,26 @@ export const getConsoleOutput = (
 export const deleteBuild = (
   nodeId: string,
   viewId: string,
-  buildId: string,
-  host: string,
-  port: string,
-  account: string,
-  password: string
+  viewName?: string,
+  host?: string,
+  port?: string,
+  account?: string,
+  password?: string,
+  jobName?: string
 ) => {
   return http.request<ServerViewResult>(
     "delete",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/build/${buildId}`),
+    baseUrlApi(`server/view_console/build/delete`),
     {
-      params: {
+      data: {
+        nodeId,
+        viewId,
+        viewName,
         host,
         port,
         account,
-        password
+        password,
+        jobName
       }
     }
   );
@@ -253,20 +278,26 @@ export const getPipelineConsole = (
 export const getPreviousBuild = (
   nodeId: string,
   viewId: string,
-  host: string,
-  port: string,
-  account: string,
-  password: string
+  viewName?: string,
+  host?: string,
+  port?: string,
+  account?: string,
+  password?: string,
+  jobName?: string
 ) => {
   return http.request<ServerViewResult>(
-    "get",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/build/previous`),
+    "post",
+    baseUrlApi(`server/view_console/build/previous`),
     {
-      params: {
+      data: {
+        nodeId,
+        viewId,
+        viewName,
         host,
         port,
         account,
-        password
+        password,
+        jobName
       }
     }
   );
@@ -276,20 +307,26 @@ export const getPreviousBuild = (
 export const getNextBuild = (
   nodeId: string,
   viewId: string,
-  host: string,
-  port: string,
-  account: string,
-  password: string
+  viewName?: string,
+  host?: string,
+  port?: string,
+  account?: string,
+  password?: string,
+  jobName?: string
 ) => {
   return http.request<ServerViewResult>(
-    "get",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/build/next`),
+    "post",
+    baseUrlApi(`server/view_console/build/next`),
     {
-      params: {
+      data: {
+        nodeId,
+        viewId,
+        viewName,
         host,
         port,
         account,
-        password
+        password,
+        jobName
       }
     }
   );

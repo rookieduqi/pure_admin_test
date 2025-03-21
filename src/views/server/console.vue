@@ -54,6 +54,9 @@ const currentBuildId = ref("#45"); // 示例构建ID，实际应从路由或API�
 // 当前活动的内容类型
 const activeContent = ref("console"); // console, pipeline-overview, pipeline-console
 
+// 控制台容器引用
+const consoleContainer = ref<HTMLElement | null>(null);
+
 // 获取控制台输出
 const fetchConsoleOutput = async () => {
   loading.value = true;
@@ -74,6 +77,14 @@ const fetchConsoleOutput = async () => {
       consoleOutput.value = (res.data || "")
         .split("\n")
         .filter(line => line.trim() !== "");
+
+      // 滚动到底部
+      setTimeout(() => {
+        if (consoleContainer.value) {
+          consoleContainer.value.scrollTop =
+            consoleContainer.value.scrollHeight;
+        }
+      }, 100);
     } else {
       ElMessage.error(res.data || "获取控制台输出失败");
     }
@@ -113,11 +124,12 @@ const handleDeleteBuild = () => {
         const res = await deleteBuild(
           nodeId.value,
           viewId.value,
-          buildId,
+          viewName.value,
           nodeHost.value,
           nodePort.value,
           nodeAccount.value,
-          nodePassword.value
+          nodePassword.value,
+          jobName.value
         );
         if (res.success) {
           ElMessage.success("删除成功");
@@ -259,10 +271,12 @@ const handlePreviousBuild = async () => {
     const res = await getPreviousBuild(
       nodeId.value,
       viewId.value,
+      viewName.value,
       nodeHost.value,
       nodePort.value,
       nodeAccount.value,
-      nodePassword.value
+      nodePassword.value,
+      jobName.value
     );
     if (res.success && res.data) {
       // 假设返回的数据中包含构建ID
@@ -284,10 +298,12 @@ const handleNextBuild = async () => {
     const res = await getNextBuild(
       nodeId.value,
       viewId.value,
+      viewName.value,
       nodeHost.value,
       nodePort.value,
       nodeAccount.value,
-      nodePassword.value
+      nodePassword.value,
+      jobName.value
     );
     if (res.success && res.data) {
       // 假设返回的数据中包含构建ID
@@ -638,15 +654,21 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="step-info">
                   <div class="info-item">
-                    <el-icon><el-icon-timer /></el-icon>
+                    <el-icon>
+                      <el-icon-timer />
+                    </el-icon>
                     <span>{{ step.startTimeMillis }}</span>
                   </div>
                   <div class="info-item">
-                    <el-icon><el-icon-stopwatch /></el-icon>
+                    <el-icon>
+                      <el-icon-stopwatch />
+                    </el-icon>
                     <span>{{ step.totalDurationMillis }}</span>
                   </div>
                   <div class="info-item">
-                    <el-icon><el-icon-time /></el-icon>
+                    <el-icon>
+                      <el-icon-time />
+                    </el-icon>
                     <span>{{ step.pauseDurationMillis }}</span>
                   </div>
                 </div>

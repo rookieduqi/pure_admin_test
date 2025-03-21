@@ -312,14 +312,14 @@ const handlePlay = async (row: NodeView, jobName?: string) => {
 };
 
 // 暂停操作
-const handlePause = async (row: NodeView, jobName?: string) => {
+const handlePause = async (row: NodeView, job?: any) => {
   if (!nodeId.value) return;
   try {
     // 调用暂停相关的API
     const res = await pauseNodeView(
       nodeId.value,
       row.id,
-      jobName,
+      job.name,
       nodeHost.value,
       nodePort.value,
       nodeAccount.value,
@@ -491,7 +491,7 @@ onMounted(() => {
                       <template #dropdown>
                         <el-dropdown-menu>
                           <el-dropdown-item :icon="VideoPlay" command="play"
-                            >播放
+                            >构建
                           </el-dropdown-item>
                           <el-dropdown-item :icon="VideoPause" command="pause"
                             >暂停
@@ -533,7 +533,7 @@ onMounted(() => {
                                   <el-dropdown-item
                                     :icon="VideoPlay"
                                     command="play"
-                                    >播放
+                                    >构建
                                   </el-dropdown-item>
                                   <el-dropdown-item
                                     :icon="VideoPause"
