@@ -171,11 +171,23 @@ export const getConsoleOutput = (
 export const deleteBuild = (
   nodeId: string,
   viewId: string,
-  buildId: string
+  buildId: string,
+  host: string,
+  port: string,
+  account: string,
+  password: string
 ) => {
   return http.request<ServerViewResult>(
     "delete",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/build/${buildId}`)
+    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/build/${buildId}`),
+    {
+      params: {
+        host,
+        port,
+        account,
+        password
+      }
+    }
   );
 };
 
@@ -238,17 +250,47 @@ export const getPipelineConsole = (
 };
 
 /** 获取上一次构建 */
-export const getPreviousBuild = (nodeId: string, viewId: string) => {
+export const getPreviousBuild = (
+  nodeId: string,
+  viewId: string,
+  host: string,
+  port: string,
+  account: string,
+  password: string
+) => {
   return http.request<ServerViewResult>(
     "get",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/build/previous`)
+    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/build/previous`),
+    {
+      params: {
+        host,
+        port,
+        account,
+        password
+      }
+    }
   );
 };
 
 /** 获取下一次构建 */
-export const getNextBuild = (nodeId: string, viewId: string) => {
+export const getNextBuild = (
+  nodeId: string,
+  viewId: string,
+  host: string,
+  port: string,
+  account: string,
+  password: string
+) => {
   return http.request<ServerViewResult>(
     "get",
-    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/build/next`)
+    baseUrlApi(`server/node_view/${nodeId}/view/${viewId}/build/next`),
+    {
+      params: {
+        host,
+        port,
+        account,
+        password
+      }
+    }
   );
 };

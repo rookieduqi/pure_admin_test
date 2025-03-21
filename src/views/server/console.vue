@@ -92,6 +92,17 @@ const handleDeleteBuild = () => {
   // 从构建ID中提取数字部分
   const buildId = currentBuildId.value.replace("#", "");
 
+  // 确保所有必需的连接参数都存在
+  if (
+    !nodeHost.value ||
+    !nodePort.value ||
+    !nodeAccount.value ||
+    !nodePassword.value
+  ) {
+    ElMessage.error("缺少必要的连接参数");
+    return;
+  }
+
   ElMessageBox.confirm(`确定要删除构建 ${currentBuildId.value} 吗？`, "提示", {
     confirmButtonText: "确定",
     cancelButtonText: "取消",
@@ -99,7 +110,15 @@ const handleDeleteBuild = () => {
   })
     .then(async () => {
       try {
-        const res = await deleteBuild(nodeId.value, viewId.value, buildId);
+        const res = await deleteBuild(
+          nodeId.value,
+          viewId.value,
+          buildId,
+          nodeHost.value,
+          nodePort.value,
+          nodeAccount.value,
+          nodePassword.value
+        );
         if (res.success) {
           ElMessage.success("删除成功");
           // 删除成功后可能需要返回上一页或刷新数据
@@ -117,8 +136,32 @@ const handleDeleteBuild = () => {
     });
 };
 
+// Pipeline数据类型定义
+interface PipelineStage {
+  name: string;
+  state: string;
+  completePercent: number;
+  type: string;
+  title: string;
+  id: string;
+  pauseDurationMillis: string;
+  totalDurationMillis: string;
+  children: any[];
+  seqContainerName: string | null;
+  nextSibling: string | null;
+  synthetic: boolean;
+  isSequential: boolean;
+  startTimeMillis: string;
+}
+
+interface PipelineData {
+  stages: PipelineStage[];
+  complete: boolean;
+}
+
 // 获取Pipeline概览
-const pipelineOverviewData = ref("");
+const pipelineOverviewData = ref<string>("");
+const pipelineData = ref<PipelineData | null>(null);
 const fetchPipelineOverview = async () => {
   loading.value = true;
   try {
@@ -133,7 +176,32 @@ const fetchPipelineOverview = async () => {
       jobName.value
     );
     if (res.success) {
-      pipelineOverviewData.value = res.data || "Pipeline概览数据加载中...";
+      try {
+        // 尝试解析返回的数据
+        if (typeof res.data === "string") {
+          pipelineOverviewData.value = res.data;
+          try {
+            const parsedData = JSON.parse(res.data);
+            if (
+              parsedData &&
+              parsedData.data &&
+              Array.isArray(parsedData.data.stages)
+            ) {
+              pipelineData.value = parsedData.data;
+            }
+          } catch (parseError) {
+            console.error("解析Pipeline数据失败:", parseError);
+          }
+        } else if (typeof res.data === "object") {
+          pipelineData.value = res.data;
+          pipelineOverviewData.value = JSON.stringify(res.data, null, 2);
+        } else {
+          pipelineOverviewData.value = "Pipeline概览数据加载中...";
+        }
+      } catch (parseError) {
+        console.error("处理Pipeline数据失败:", parseError);
+        pipelineOverviewData.value = res.data || "Pipeline概览数据加载中...";
+      }
       activeContent.value = "pipeline-overview";
     } else {
       ElMessage.error(res.data || "获取Pipeline概览失败");
@@ -147,17 +215,32 @@ const fetchPipelineOverview = async () => {
 };
 
 // 获取Pipeline控制台
-const pipelineConsoleData = ref("");
+const pipelineConsoleData = ref(null);
 const fetchPipelineConsole = async () => {
   loading.value = true;
   try {
     const res = await getPipelineConsole(
       nodeId.value,
       viewId.value,
-      viewName.value
+      viewName.value,
+      nodeHost.value,
+      nodePort.value,
+      nodeAccount.value,
+      nodePassword.value,
+      jobName.value
     );
     if (res.success) {
-      pipelineConsoleData.value = res.data || "Pipeline控制台数据加载中...";
+      // 确保数据是对象格式
+      if (typeof res.data === "string") {
+        try {
+          pipelineConsoleData.value = JSON.parse(res.data);
+        } catch (e) {
+          pipelineConsoleData.value = { data: { steps: [] } };
+          console.error("解析Pipeline控制台数据失败:", e);
+        }
+      } else {
+        pipelineConsoleData.value = res.data;
+      }
       activeContent.value = "pipeline-console";
     } else {
       ElMessage.error(res.data || "获取Pipeline控制台失败");
@@ -173,7 +256,14 @@ const fetchPipelineConsole = async () => {
 // 获取上一次构建
 const handlePreviousBuild = async () => {
   try {
-    const res = await getPreviousBuild(nodeId.value, viewId.value);
+    const res = await getPreviousBuild(
+      nodeId.value,
+      viewId.value,
+      nodeHost.value,
+      nodePort.value,
+      nodeAccount.value,
+      nodePassword.value
+    );
     if (res.success && res.data) {
       // 假设返回的数据中包含构建ID
       currentBuildId.value = `#${res.data.id || ""}`;
@@ -191,7 +281,14 @@ const handlePreviousBuild = async () => {
 // 获取下一次构建
 const handleNextBuild = async () => {
   try {
-    const res = await getNextBuild(nodeId.value, viewId.value);
+    const res = await getNextBuild(
+      nodeId.value,
+      viewId.value,
+      nodeHost.value,
+      nodePort.value,
+      nodeAccount.value,
+      nodePassword.value
+    );
     if (res.success && res.data) {
       // 假设返回的数据中包含构建ID
       currentBuildId.value = `#${res.data.id || ""}`;
@@ -378,7 +475,121 @@ onBeforeUnmount(() => {
             v-loading="loading"
             class="console-container"
           >
-            <div v-if="pipelineOverviewData" class="console-output">
+            <!-- Pipeline流程图 -->
+            <div
+              v-if="
+                pipelineData &&
+                pipelineData.stages &&
+                pipelineData.stages.length > 0
+              "
+              class="pipeline-graph"
+            >
+              <div class="pipeline-steps">
+                <div class="pipeline-step-item">
+                  <div class="step-node start-node">Start</div>
+                  <div class="step-line" />
+                </div>
+
+                <div
+                  v-for="(stage, index) in pipelineData.stages"
+                  :key="stage.id"
+                  class="pipeline-step-item"
+                >
+                  <div
+                    class="step-node"
+                    :class="{
+                      'success-node': stage.state === 'success',
+                      'failed-node': stage.state === 'failed',
+                      'aborted-node': stage.state === 'aborted',
+                      'running-node': stage.state === 'running'
+                    }"
+                  >
+                    <el-icon
+                      v-if="stage.state === 'success'"
+                      class="status-icon"
+                    >
+                      <el-icon-check />
+                    </el-icon>
+                    <el-icon
+                      v-else-if="stage.state === 'failed'"
+                      class="status-icon"
+                    >
+                      <el-icon-close />
+                    </el-icon>
+                    <el-icon
+                      v-else-if="stage.state === 'aborted'"
+                      class="status-icon"
+                    >
+                      <el-icon-close />
+                    </el-icon>
+                    <el-icon v-else class="status-icon">
+                      <el-icon-loading />
+                    </el-icon>
+                  </div>
+                  <div class="step-title">{{ stage.name }}</div>
+                  <div
+                    v-if="index < pipelineData.stages.length - 1"
+                    class="step-line"
+                  />
+                </div>
+
+                <div class="pipeline-step-item">
+                  <div class="step-node end-node">End</div>
+                </div>
+              </div>
+
+              <!-- Pipeline详情 -->
+              <div class="pipeline-details">
+                <el-card shadow="never" class="details-card">
+                  <template #header>
+                    <div class="details-header">Details</div>
+                  </template>
+                  <div class="details-content">
+                    <div
+                      v-for="stage in pipelineData.stages"
+                      :key="stage.id"
+                      class="stage-detail"
+                    >
+                      <div class="stage-name">{{ stage.title }}</div>
+                      <div class="stage-info">
+                        <div class="info-item">
+                          <el-icon>
+                            <el-icon-timer />
+                          </el-icon>
+                          <span>{{ stage.startTimeMillis }}</span>
+                        </div>
+                        <div class="info-item">
+                          <el-icon>
+                            <el-icon-stopwatch />
+                          </el-icon>
+                          <span>{{ stage.totalDurationMillis }}</span>
+                        </div>
+                        <div class="info-item">
+                          <el-icon>
+                            <el-icon-time />
+                          </el-icon>
+                          <span>{{ stage.pauseDurationMillis }}</span>
+                        </div>
+                        <div
+                          class="info-item status-item"
+                          :class="{
+                            'success-text': stage.state === 'success',
+                            'failed-text': stage.state === 'failed',
+                            'aborted-text': stage.state === 'aborted',
+                            'running-text': stage.state === 'running'
+                          }"
+                        >
+                          <span>Status: {{ stage.state }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </el-card>
+              </div>
+            </div>
+
+            <!-- 原始数据展示 -->
+            <div v-else-if="pipelineOverviewData" class="console-output">
               <pre class="console-line">{{ pipelineOverviewData }}</pre>
             </div>
             <div v-else class="empty-text">暂无Pipeline概览数据</div>
@@ -390,8 +601,56 @@ onBeforeUnmount(() => {
             v-loading="loading"
             class="console-container"
           >
-            <div v-if="pipelineConsoleData" class="console-output">
-              <pre class="console-line">{{ pipelineConsoleData }}</pre>
+            <div
+              v-if="
+                pipelineConsoleData &&
+                typeof pipelineConsoleData === 'object' &&
+                pipelineConsoleData.data &&
+                pipelineConsoleData.data.steps
+              "
+              class="pipeline-steps"
+            >
+              <div
+                v-for="step in pipelineConsoleData.data.steps"
+                :key="step.id"
+                class="pipeline-step"
+              >
+                <div
+                  class="step-header"
+                  :class="{
+                    success: step.state === 'success',
+                    aborted: step.state === 'aborted',
+                    failed: step.state === 'failed',
+                    running: step.state === 'running'
+                  }"
+                >
+                  <el-icon class="status-icon">
+                    <el-icon-check v-if="step.state === 'success'" />
+                    <el-icon-close
+                      v-else-if="
+                        step.state === 'aborted' || step.state === 'failed'
+                      "
+                    />
+                    <el-icon-loading v-else />
+                  </el-icon>
+                  <span class="step-name">{{ step.name }}</span>
+                  <span class="step-state">{{ step.state }}</span>
+                </div>
+                <div class="step-info">
+                  <div class="info-item">
+                    <el-icon><el-icon-timer /></el-icon>
+                    <span>{{ step.startTimeMillis }}</span>
+                  </div>
+                  <div class="info-item">
+                    <el-icon><el-icon-stopwatch /></el-icon>
+                    <span>{{ step.totalDurationMillis }}</span>
+                  </div>
+                  <div class="info-item">
+                    <el-icon><el-icon-time /></el-icon>
+                    <span>{{ step.pauseDurationMillis }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
             <div v-else class="empty-text">暂无Pipeline控制台数据</div>
           </div>
@@ -412,8 +671,8 @@ onBeforeUnmount(() => {
   min-height: 400px;
   max-height: 600px;
   overflow-y: auto;
-  background-color: #1e1e1e;
-  color: #f0f0f0;
+  background-color: #f5f7fa;
+  color: #333;
   border-radius: 4px;
   padding: 10px;
 }
@@ -466,5 +725,209 @@ onBeforeUnmount(() => {
 
 .right-content {
   flex-grow: 1;
+}
+
+/* Pipeline流程图样式 */
+.pipeline-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.pipeline-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.pipeline-step {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.step-header.success {
+  background-color: #f0f9eb;
+  border-left: 4px solid #67c23a;
+}
+
+.step-header.aborted {
+  background-color: #fef0f0;
+  border-left: 4px solid #f56c6c;
+}
+
+.step-header.failed {
+  background-color: #fef0f0;
+  border-left: 4px solid #f56c6c;
+}
+
+.step-header.running {
+  background-color: #e6f1fc;
+  border-left: 4px solid #409eff;
+}
+
+.status-icon {
+  font-size: 18px;
+}
+
+.step-name {
+  flex: 1;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.step-state {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.step-info {
+  padding: 12px 16px;
+  display: flex;
+  gap: 24px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  font-size: 13px;
+}
+
+.info-item .el-icon {
+  font-size: 16px;
+}
+
+.pipeline-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.step-node {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 2;
+}
+
+.start-node,
+.end-node {
+  background-color: #909399;
+  color: white;
+  font-size: 12px;
+}
+
+.success-node {
+  background-color: #67c23a;
+  color: white;
+}
+
+.failed-node {
+  background-color: #f56c6c;
+  color: white;
+}
+
+.aborted-node {
+  background-color: #e6a23c;
+  color: white;
+}
+
+.running-node {
+  background-color: #409eff;
+  color: white;
+}
+
+.step-line {
+  height: 2px;
+  width: 100px;
+  background-color: #dcdfe6;
+  position: relative;
+  z-index: 1;
+}
+
+.step-title {
+  font-size: 12px;
+  text-align: center;
+  max-width: 120px;
+  word-break: break-word;
+}
+
+/* Pipeline详情样式 */
+.pipeline-details {
+  margin-top: 20px;
+}
+
+.details-card {
+  background-color: #f5f7fa;
+}
+
+.details-header {
+  font-weight: bold;
+}
+
+.details-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.stage-detail {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 10px;
+  background-color: white;
+}
+
+.stage-name {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.stage-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.status-item {
+  font-weight: bold;
+}
+
+.success-text {
+  color: #67c23a;
+}
+
+.failed-text {
+  color: #f56c6c;
+}
+
+.aborted-text {
+  color: #e6a23c;
+}
+
+.running-text {
+  color: #409eff;
 }
 </style>
