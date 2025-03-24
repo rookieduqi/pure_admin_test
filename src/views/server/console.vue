@@ -500,19 +500,145 @@ onBeforeUnmount(() => {
               "
               class="pipeline-graph"
             >
-              <div class="pipeline-steps">
-                <div class="pipeline-step-item">
-                  <div class="step-node start-node">Start</div>
-                  <div class="step-line" />
+              <div class="pipeline-flow-container">
+                <!-- 起始节点 -->
+                <div class="pipeline-node start-node">
+                  <div class="node-icon">
+                    <el-icon><Connection /></el-icon>
+                  </div>
+                  <div class="node-title">Start</div>
                 </div>
 
-                <div
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 初始化节点 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">初始化</div>
+                  <div class="node-subtitle">初始化目录</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 拉取GMB-SERVER后端项目 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">拉取</div>
+                  <div class="node-subtitle">GMB-SERVER后端项目</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 构建GMB-SERVER项目 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">构建</div>
+                  <div class="node-subtitle">GMB-SERVER项目</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 拉取GMB-WEB前端项目 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">拉取</div>
+                  <div class="node-subtitle">GMB-WEB前端项目</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 拉取GMB-WEB镜像构建 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">拉取</div>
+                  <div class="node-subtitle">GMB-WEB镜像构建</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 拉取GMB-CLIENT前端项目 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">拉取</div>
+                  <div class="node-subtitle">GMB-CLIENT前端项目</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 拉取GMB-CLIENT镜像构建 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">拉取</div>
+                  <div class="node-subtitle">GMB-CLIENT镜像构建</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 架包分发 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">架包分发</div>
+                  <div class="node-subtitle">架包分发</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 合并构建文件 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">合并构建文件</div>
+                  <div class="node-subtitle">合并构建文件</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 制品发布 -->
+                <div class="pipeline-node" :class="{ 'success-node': true }">
+                  <div class="node-icon">
+                    <el-icon><el-icon-check /></el-icon>
+                  </div>
+                  <div class="node-title">制品发布</div>
+                  <div class="node-subtitle">制品发布</div>
+                </div>
+
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 动态生成阶段节点 -->
+                <template
                   v-for="(stage, index) in pipelineData.stages"
                   :key="stage.id"
-                  class="pipeline-step-item"
                 >
                   <div
-                    class="step-node"
+                    class="pipeline-node"
                     :class="{
                       'success-node': stage.state === 'success',
                       'failed-node': stage.state === 'failed',
@@ -520,37 +646,49 @@ onBeforeUnmount(() => {
                       'running-node': stage.state === 'running'
                     }"
                   >
-                    <el-icon
-                      v-if="stage.state === 'success'"
-                      class="status-icon"
-                    >
-                      <el-icon-check />
-                    </el-icon>
-                    <el-icon
-                      v-else-if="stage.state === 'failed'"
-                      class="status-icon"
-                    >
-                      <el-icon-close />
-                    </el-icon>
-                    <el-icon
-                      v-else-if="stage.state === 'aborted'"
-                      class="status-icon"
-                    >
-                      <el-icon-close />
-                    </el-icon>
-                    <el-icon v-else class="status-icon">
-                      <el-icon-loading />
-                    </el-icon>
+                    <div class="node-icon">
+                      <el-icon v-if="stage.state === 'success'">
+                        <el-icon-check />
+                      </el-icon>
+                      <el-icon
+                        v-else-if="
+                          stage.state === 'failed' || stage.state === 'aborted'
+                        "
+                      >
+                        <el-icon-close />
+                      </el-icon>
+                      <el-icon v-else>
+                        <el-icon-loading />
+                      </el-icon>
+                    </div>
+                    <div class="node-title">{{ stage.name }}</div>
+                    <div class="node-subtitle">{{ stage.title }}</div>
                   </div>
-                  <div class="step-title">{{ stage.name }}</div>
+
+                  <!-- 连接线 (除了最后一个节点) -->
                   <div
                     v-if="index < pipelineData.stages.length - 1"
-                    class="step-line"
+                    class="pipeline-connector"
+                    :class="{
+                      failed: stage.state === 'failed',
+                      aborted: stage.state === 'aborted',
+                      running: stage.state === 'running'
+                    }"
                   />
-                </div>
+                </template>
 
-                <div class="pipeline-step-item">
-                  <div class="step-node end-node">End</div>
+                <!-- 连接线 -->
+                <div class="pipeline-connector" />
+
+                <!-- 结束节点 -->
+                <div
+                  class="pipeline-node end-node"
+                  :class="{ 'success-node': pipelineData.complete }"
+                >
+                  <div class="node-icon">
+                    <el-icon><Connection /></el-icon>
+                  </div>
+                  <div class="node-title">End</div>
                 </div>
               </div>
 
@@ -747,6 +885,9 @@ onBeforeUnmount(() => {
 
 .right-content {
   flex-grow: 1;
+  overflow-x: auto;
+  max-width: none; /* 移除最大宽度限制 */
+  width: 100%;
 }
 
 /* Pipeline流程图样式 */
@@ -755,13 +896,140 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 20px;
   padding: 20px 0;
+  overflow-x: auto;
+  min-width: 100%;
+  width: max-content;
 }
 
-.pipeline-steps {
+.pipeline-flow-container {
+  display: flex;
+  align-items: center;
+  min-width: max-content;
+  padding: 20px 10px;
+  width: 100%;
+  overflow-x: auto;
+  margin-right: 20px; /* 添加右侧边距，确保End节点完全显示 */
+}
+
+.pipeline-node {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  max-width: 120px;
+  text-align: center;
+  position: relative;
+  padding: 0 5px;
+  margin: 0 5px;
+}
+
+.node-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #f0f2f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #606266;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.node-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #303133;
+  white-space: nowrap;
+}
+
+.node-subtitle {
+  font-size: 12px;
+  color: #909399;
+  max-width: 100px;
+  word-break: break-word;
+  text-align: center;
+  line-height: 1.2;
+  height: 36px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.pipeline-connector {
+  height: 2px;
+  width: 50px;
+  background-color: #67c23a;
+  margin: 0 5px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pipeline-connector::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -3px;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid #67c23a;
+}
+
+/* 不同状态的连接线颜色 */
+.pipeline-connector.failed {
+  background-color: #f56c6c;
+}
+
+.pipeline-connector.failed::before {
+  border-left-color: #f56c6c;
+}
+
+.pipeline-connector.aborted {
+  background-color: #e6a23c;
+}
+
+.pipeline-connector.aborted::before {
+  border-left-color: #e6a23c;
+}
+
+.pipeline-connector.running {
+  background-color: #409eff;
+}
+
+.pipeline-connector.running::before {
+  border-left-color: #409eff;
+}
+
+.start-node .node-icon,
+.end-node .node-icon {
+  background-color: #909399;
+  color: white;
+}
+
+.success-node .node-icon {
+  background-color: #67c23a;
+  color: white;
+}
+
+.failed-node .node-icon {
+  background-color: #f56c6c;
+  color: white;
+}
+
+.aborted-node .node-icon {
+  background-color: #e6a23c;
+  color: white;
+}
+
+.running-node .node-icon {
+  background-color: #409eff;
+  color: white;
 }
 
 .pipeline-step {
