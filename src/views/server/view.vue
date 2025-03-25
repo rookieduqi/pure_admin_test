@@ -11,7 +11,11 @@ import {
   VideoPlay,
   VideoPause,
   More,
-  ArrowDown
+  ArrowDown,
+  CircleCheck,
+  CircleClose,
+  Warning,
+  QuestionFilled
 } from "@element-plus/icons-vue";
 import {
   getNodeViews,
@@ -50,10 +54,12 @@ interface NodeView {
   id: string;
   weather: string;
   name: string;
-  lastSuccess?: string;
-  lastFailure?: string;
-  lastDuration?: string;
-  createTime?: string;
+  url?: string;
+  color?: string;
+  last_success?: string;
+  last_failure?: string;
+  last_duration?: string;
+  create_time?: string;
   expanded?: boolean;
   jobs?: any[];
   loading?: boolean;
@@ -449,32 +455,62 @@ onMounted(() => {
             >
               <el-table-column type="selection" width="55" align="center" />
 
-              <el-table-column
-                prop="id"
-                label="序号"
-                width="80"
-                align="center"
-              />
-              <el-table-column prop="weather" label="天气" width="100" />
-              <el-table-column prop="name" label="名字" min-width="120" />
-              <el-table-column
-                prop="lastSuccess"
-                label="Last Success"
-                min-width="160"
-                show-overflow-tooltip
-              />
-              <el-table-column
-                prop="lastFailure"
-                label="Last Failure"
-                min-width="160"
-                show-overflow-tooltip
-              />
-              <el-table-column
-                prop="lastDuration"
-                label="Last Duration"
-                width="120"
-                align="center"
-              />
+              <el-table-column label="S" width="50" align="center">
+                <template #default="{ row }">
+                  <el-icon v-if="row.color === 'blue'" class="text-success">
+                    <circle-check />
+                  </el-icon>
+                  <el-icon v-else-if="row.color === 'red'" class="text-danger">
+                    <circle-close />
+                  </el-icon>
+                  <el-icon
+                    v-else-if="row.color === 'notbuilt'"
+                    class="text-warning"
+                  >
+                    <warning />
+                  </el-icon>
+                  <el-icon v-else class="text-info">
+                    <question-filled />
+                  </el-icon>
+                </template>
+              </el-table-column>
+
+              <el-table-column label="W" width="50" align="center">
+                <template #default="{ row }">
+                  <span>{{
+                    row.weather ? row.weather.split(" ")[0] : ""
+                  }}</span>
+                </template>
+              </el-table-column>
+
+              <el-table-column prop="name" label="Name" min-width="120" />
+
+              <el-table-column label="上次成功" min-width="120">
+                <template #default="{ row }">
+                  <span v-if="row.last_success && row.last_success !== '无'">
+                    {{ row.last_success }}
+                  </span>
+                  <span v-else>-</span>
+                </template>
+              </el-table-column>
+
+              <el-table-column label="上次失败" min-width="120">
+                <template #default="{ row }">
+                  <span v-if="row.last_failure && row.last_failure !== '无'">
+                    {{ row.last_failure }}
+                  </span>
+                  <span v-else>-</span>
+                </template>
+              </el-table-column>
+
+              <el-table-column label="上次持续时间" width="120" align="center">
+                <template #default="{ row }">
+                  <span v-if="row.last_duration && row.last_duration !== '无'">
+                    {{ row.last_duration }}
+                  </span>
+                  <span v-else>-</span>
+                </template>
+              </el-table-column>
               <!-- 操作列 -->
               <el-table-column label="操作" width="120" align="center">
                 <template #default="{ row }">
@@ -511,10 +547,89 @@ onMounted(() => {
                   <div v-loading="row.loading">
                     <div v-if="row.jobs && row.jobs.length > 0">
                       <el-table :data="row.jobs" style="width: 100%">
-                        <el-table-column prop="name" label="Job名称" />
-                        <el-table-column prop="lastSuccess" label="上次成功" />
-                        <el-table-column prop="lastFailure" label="上次失败" />
-                        <el-table-column prop="lastDuration" label="持续时间" />
+                        <el-table-column label="S" width="50" align="center">
+                          <template #default="{ row: job }">
+                            <el-icon
+                              v-if="job.color === 'blue'"
+                              class="text-success"
+                            >
+                              <circle-check />
+                            </el-icon>
+                            <el-icon
+                              v-else-if="job.color === 'red'"
+                              class="text-danger"
+                            >
+                              <circle-close />
+                            </el-icon>
+                            <el-icon
+                              v-else-if="job.color === 'notbuilt'"
+                              class="text-warning"
+                            >
+                              <warning />
+                            </el-icon>
+                            <el-icon v-else class="text-info">
+                              <question-filled />
+                            </el-icon>
+                          </template>
+                        </el-table-column>
+
+                        <el-table-column label="W" width="50" align="center">
+                          <template #default="{ row: job }">
+                            <span>{{
+                              job.weather ? job.weather.split(" ")[0] : ""
+                            }}</span>
+                          </template>
+                        </el-table-column>
+
+                        <el-table-column
+                          prop="name"
+                          label="Name"
+                          min-width="120"
+                        />
+
+                        <el-table-column label="上次成功" min-width="120">
+                          <template #default="{ row: job }">
+                            <span
+                              v-if="
+                                job.last_success && job.last_success !== '无'
+                              "
+                            >
+                              {{ job.last_success }}
+                            </span>
+                            <span v-else>-</span>
+                          </template>
+                        </el-table-column>
+
+                        <el-table-column label="上次失败" min-width="120">
+                          <template #default="{ row: job }">
+                            <span
+                              v-if="
+                                job.last_failure && job.last_failure !== '无'
+                              "
+                            >
+                              {{ job.last_failure }}
+                            </span>
+                            <span v-else>-</span>
+                          </template>
+                        </el-table-column>
+
+                        <el-table-column
+                          label="上次持续时间"
+                          width="120"
+                          align="center"
+                        >
+                          <template #default="{ row: job }">
+                            <span
+                              v-if="
+                                job.last_duration && job.last_duration !== '无'
+                              "
+                            >
+                              {{ job.last_duration }}
+                            </span>
+                            <span v-else>-</span>
+                          </template>
+                        </el-table-column>
+
                         <el-table-column label="操作" width="120">
                           <template #default="{ row: job }">
                             <el-dropdown
@@ -647,5 +762,21 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   gap: 8px;
+}
+
+.text-success {
+  color: #67c23a;
+}
+
+.text-danger {
+  color: #f56c6c;
+}
+
+.text-warning {
+  color: #e6a23c;
+}
+
+.text-info {
+  color: #909399;
 }
 </style>
