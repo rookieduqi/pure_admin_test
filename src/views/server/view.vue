@@ -57,7 +57,9 @@ interface NodeView {
   url?: string;
   color?: string;
   last_success?: string;
+  last_success_number?: string;
   last_failure?: string;
+  last_failure_number?: string;
   last_duration?: string;
   create_time?: string;
   expanded?: boolean;

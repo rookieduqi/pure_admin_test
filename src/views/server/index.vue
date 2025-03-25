@@ -7,7 +7,9 @@ import {
   Search,
   Plus,
   View,
-  RefreshRight
+  RefreshRight,
+  Hide,
+  View as EyeIcon
 } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 import {
@@ -72,6 +74,14 @@ interface ServerNode {
 const searchForm = ref({ name: "" });
 
 const tableData = ref<ServerNode[]>([]); // 初始化为空数组
+
+// 密码显示状态映射，用于控制每行密码的显示/隐藏
+const passwordVisibleMap = ref<Record<string, boolean>>({});
+
+// 切换密码显示/隐藏状态
+const togglePasswordVisibility = (id: string) => {
+  passwordVisibleMap.value[id] = !passwordVisibleMap.value[id];
+};
 
 // 分页相关
 const currentPage = ref(1);
@@ -379,12 +389,25 @@ const handleStatusChange = (row: ServerNode) => {
           <el-table-column prop="host" label="Host" min-width="120" />
           <el-table-column prop="port" label="端口" width="80" align="center" />
           <el-table-column prop="account" label="账户" min-width="100" />
-          <el-table-column
-            prop="password"
-            label="密码"
-            min-width="100"
-            show-overflow-tooltip
-          />
+          <el-table-column label="密码" min-width="100" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="password-cell">
+                <span>{{
+                  passwordVisibleMap[row.id] ? row.password : "••••••••"
+                }}</span>
+                <el-button
+                  type="primary"
+                  link
+                  @click.stop="togglePasswordVisibility(row.id)"
+                >
+                  <el-icon>
+                    <EyeIcon v-if="passwordVisibleMap[row.id]" />
+                    <Hide v-else />
+                  </el-icon>
+                </el-button>
+              </div>
+            </template>
+          </el-table-column>
           <el-table-column prop="status" label="状态" width="80" align="center">
             <template #default="{ row }">
               <el-switch
@@ -452,5 +475,16 @@ const handleStatusChange = (row: ServerNode) => {
   text-align: center;
   color: gray;
   padding: 20px;
+}
+
+.password-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.password-cell .el-button {
+  margin-left: 8px;
+  padding: 2px;
 }
 </style>
