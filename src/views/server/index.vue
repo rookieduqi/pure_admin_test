@@ -68,7 +68,7 @@ interface ServerNode {
   password: string;
   status: boolean;
   remark: string;
-  CreateTime: string;
+  addTime: string;
 }
 
 const searchForm = ref({ name: "" });
@@ -151,6 +151,7 @@ const dialogVisible = ref(false);
 
 // 表单数据
 const formData = reactive<ServerNode>({
+  id: "",
   name: "",
   host: "",
   port: "",

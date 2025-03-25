@@ -489,8 +489,11 @@ onMounted(() => {
 
               <el-table-column label="上次成功" min-width="120">
                 <template #default="{ row }">
-                  <span v-if="row.last_success && row.last_success !== '无'">
+                  <span v-if="row.last_success && row.last_success !== 'N/A'">
                     {{ row.last_success }}
+                    <span v-if="row.last_success_number" class="build-number"
+                      >#{{ row.last_success_number }}</span
+                    >
                   </span>
                   <span v-else>-</span>
                 </template>
@@ -498,8 +501,11 @@ onMounted(() => {
 
               <el-table-column label="上次失败" min-width="120">
                 <template #default="{ row }">
-                  <span v-if="row.last_failure && row.last_failure !== '无'">
+                  <span v-if="row.last_failure && row.last_failure !== 'N/A'">
                     {{ row.last_failure }}
+                    <span v-if="row.last_failure_number" class="build-number"
+                      >#{{ row.last_failure_number }}</span
+                    >
                   </span>
                   <span v-else>-</span>
                 </template>
@@ -507,7 +513,7 @@ onMounted(() => {
 
               <el-table-column label="上次持续时间" width="120" align="center">
                 <template #default="{ row }">
-                  <span v-if="row.last_duration && row.last_duration !== '无'">
+                  <span v-if="row.last_duration && row.last_duration !== 'N/A'">
                     {{ row.last_duration }}
                   </span>
                   <span v-else>-</span>
@@ -597,6 +603,11 @@ onMounted(() => {
                               "
                             >
                               {{ job.last_success }}
+                              <span
+                                v-if="job.last_success_number"
+                                class="build-number"
+                                >#{{ job.last_success_number }}</span
+                              >
                             </span>
                             <span v-else>-</span>
                           </template>
@@ -610,6 +621,11 @@ onMounted(() => {
                               "
                             >
                               {{ job.last_failure }}
+                              <span
+                                v-if="job.last_failure_number"
+                                class="build-number"
+                                >#{{ job.last_failure_number }}</span
+                              >
                             </span>
                             <span v-else>-</span>
                           </template>
@@ -780,5 +796,16 @@ onMounted(() => {
 
 .text-info {
   color: #909399;
+}
+
+.build-number {
+  display: inline-block;
+  border: 1px solid #f56c6c;
+  color: #f56c6c;
+  padding: 0 4px;
+  margin-left: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  border-radius: 2px;
 }
 </style>
