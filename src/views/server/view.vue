@@ -15,7 +15,8 @@ import {
   CircleCheck,
   CircleClose,
   Warning,
-  QuestionFilled
+  QuestionFilled,
+  Folder
 } from "@element-plus/icons-vue";
 import {
   getNodeViews,
@@ -459,7 +460,13 @@ onMounted(() => {
 
               <el-table-column label="S" width="50" align="center">
                 <template #default="{ row }">
-                  <el-icon v-if="row.color === 'blue'" class="text-success">
+                  <el-icon v-if="row.type === 'folder'" class="text-primary">
+                    <folder />
+                  </el-icon>
+                  <el-icon
+                    v-else-if="row.color === 'blue'"
+                    class="text-success"
+                  >
                     <circle-check />
                   </el-icon>
                   <el-icon v-else-if="row.color === 'red'" class="text-danger">
@@ -479,7 +486,18 @@ onMounted(() => {
 
               <el-table-column label="W" width="50" align="center">
                 <template #default="{ row }">
-                  <span>{{
+                  <!-- 显示天气图标 -->
+                  <el-icon
+                    v-if="
+                      row.weather &&
+                      row.weather !== '无' &&
+                      row.weather !== '未知'
+                    "
+                    class="text-warning"
+                  >
+                    <span class="weather-icon">☀️</span>
+                  </el-icon>
+                  <span v-else>{{
                     row.weather ? row.weather.split(" ")[0] : ""
                   }}</span>
                 </template>
@@ -494,8 +512,13 @@ onMounted(() => {
                     <span v-if="row.last_success_number" class="build-number"
                       >#{{ row.last_success_number }}</span
                     >
+                    <span
+                      v-else-if="row.last_success.includes('#')"
+                      class="build-number"
+                      >#{{ row.last_success.split("#")[1] }}</span
+                    >
                   </span>
-                  <span v-else>-</span>
+                  <span v-else>{{ row.type === "folder" ? "没有" : "-" }}</span>
                 </template>
               </el-table-column>
 
@@ -506,8 +529,13 @@ onMounted(() => {
                     <span v-if="row.last_failure_number" class="build-number"
                       >#{{ row.last_failure_number }}</span
                     >
+                    <span
+                      v-else-if="row.last_failure.includes('#')"
+                      class="build-number"
+                      >#{{ row.last_failure.split("#")[1] }}</span
+                    >
                   </span>
-                  <span v-else>-</span>
+                  <span v-else>{{ row.type === "folder" ? "无" : "-" }}</span>
                 </template>
               </el-table-column>
 

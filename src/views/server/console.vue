@@ -49,7 +49,7 @@ const autoRefresh = ref(false);
 const refreshInterval = ref<number | null>(null);
 
 // 当前构建ID
-const currentBuildId = ref("#45"); // 示例构建ID，实际应从路由或API获取
+const currentBuildId = ref(""); // 将从API获取
 
 // 当前活动的内容类型
 const activeContent = ref("console"); // console, pipeline-overview, pipeline-console
@@ -73,6 +73,11 @@ const fetchConsoleOutput = async () => {
       jobName.value
     );
     if (res.success) {
+      // 更新构建号
+      if (res.buildNumber !== undefined) {
+        currentBuildId.value = `#${res.buildNumber}`;
+      }
+
       // 将返回的字符串按换行符分割成数组
       consoleOutput.value = (res.data || "")
         .split("\n")
@@ -437,7 +442,7 @@ onBeforeUnmount(() => {
           </el-button>
 
           <el-button class="left-button" @click="handleDeleteBuild">
-            Delete the build "{{ currentBuildId }}"?
+            Delete the build "{{ currentBuildId }}"
           </el-button>
 
           <el-button

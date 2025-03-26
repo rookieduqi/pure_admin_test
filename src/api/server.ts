@@ -14,6 +14,7 @@ export type ServerViewResult = {
 export type ConsoleOutputResult = {
   success: boolean;
   data: any;
+  buildNumber?: number;
 };
 
 export type PipelineResult = {
